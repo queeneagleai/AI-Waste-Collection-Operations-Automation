@@ -1,0 +1,931 @@
+{
+  "name": "AI Waste Collection Operations Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "waste-collection-request",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -112,
+        -32
+      ],
+      "id": "c8e42e90-c95a-45e1-80fb-0e1829a54994",
+      "name": "Webhook",
+      "webhookId": "e2374bd4-450b-4cbb-8577-c61ef07eee87"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bbefe67e-9ab9-4e70-9c16-2e16325c4837",
+              "name": "customer_name",
+              "value": "={{ $json.body.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "b1880327-f210-46b1-9941-cd8e1a6770ac",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "b1838540-0314-4d53-8ece-3899b6660a19",
+              "name": "phone",
+              "value": "={{ $json.body.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "720a2320-c238-4570-8705-1d840de29311",
+              "name": "request",
+              "value": "={{ $json.body.request }}",
+              "type": "string"
+            },
+            {
+              "id": "2efa4717-fa14-4124-a9ef-68dd8094a613",
+              "name": "timestamp",
+              "value": "={{ $now }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        64,
+        -32
+      ],
+      "id": "bffb9530-37db-467f-ac04-208a68c531d8",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.request }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "address",
+              "description": "The complete address where the waste should be collected.",
+              "required": true
+            },
+            {
+              "name": "waste_type",
+              "description": "The type of waste to be collected. Normalize into a simple category such as General Waste, Recyclable Waste, Organic Waste, Hazardous Waste, Construction Waste, Electronic Waste, or Other.",
+              "required": true
+            },
+            {
+              "name": "quantity",
+              "type": "number",
+              "description": "The numerical quantity of waste, bags, containers, items, or units requested for collection.",
+              "required": true
+            },
+            {
+              "name": "pickup_date",
+              "description": "The date the customer wants the waste collected. Convert relative dates such as tomorrow or next Monday into an actual date using the current date.",
+              "required": true
+            },
+            {
+              "name": "preferred_time",
+              "description": "The customer's preferred pickup time or time window, such as Morning, Afternoon, Evening, or a specific time.",
+              "required": true
+            },
+            {
+              "name": "additional_instructions",
+              "description": "Any other important instructions or information provided by the customer about the collection."
+            },
+            {
+              "name": "service_area",
+              "description": "The main service area or neighborhood where the pickup will take place. Extract the area name from the customer's address, such as Garki, Wuse, Kubwa, Maitama, etc."
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "=You are an expert information extraction algorithm for a waste collection operations system.\n\nOnly extract information that is relevant to the requested attributes from the customer's request.\n\nDo not invent or assume information that is not present in the customer's request.\n\nIf an attribute cannot be determined from the text, return null or omit its value.\n\nThe current date is {{ $now.format('yyyy-MM-dd') }}.\n\nWhen extracting the pickup date:\n- Convert relative dates such as \"today\", \"tomorrow\", \"next Monday\", etc. into the correct calendar date using the current date above.\n- Return the date in YYYY-MM-DD format.\n- If no pickup date is provided or it cannot be determined, return null.\n\nFor waste type, normalize the customer's wording into an appropriate category where possible, such as:\n- General Waste\n- Recyclable Waste\n- Organic Waste\n- Hazardous Waste\n- Construction Waste\n- Electronic Waste\n- Other\n\nOnly extract information from the customer's request. Do not assign drivers, choose a schedule, or make operational decisions."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        208
+      ],
+      "id": "4ff4b7aa-3597-414b-924c-992a3ced08c7",
+      "name": "Information Extractor",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash",
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        320
+      ],
+      "id": "df7d6884-470b-4cfd-b475-e180f838ab6c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "tM3LdFyqqcpgUP77",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        384,
+        -16
+      ],
+      "id": "778a38d6-bd8e-45ee-a87c-4b95e37df538",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1sF-e43C18Tj6WDafawutm1FBNQWJn4u6CcICKyfWjBw",
+          "mode": "list",
+          "cachedResultName": "Waste Collection Operations",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sF-e43C18Tj6WDafawutm1FBNQWJn4u6CcICKyfWjBw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1102188614,
+          "mode": "list",
+          "cachedResultName": "Waste Collection Drivers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sF-e43C18Tj6WDafawutm1FBNQWJn4u6CcICKyfWjBw/edit#gid=1102188614"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "service_area",
+              "lookupValue": "={{ $json.output.service_area }}"
+            },
+            {
+              "lookupColumn": "available",
+              "lookupValue": "Yes"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        560,
+        48
+      ],
+      "id": "3374455d-f0ae-455c-a834-2d3b56f4cffb",
+      "name": "Drivers",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BBRztb0uly5NN9af",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        736,
+        0
+      ],
+      "id": "edbf6f19-0fb9-4bd7-b8e0-aa3745a901f5",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "effdb937-b27d-4357-8c0b-67195e2c5414",
+              "name": "job_id",
+              "value": "=WC-{{ $now.format('yyyyMMddHHmmss') }}",
+              "type": "string"
+            },
+            {
+              "id": "fd7b8d12-c201-487c-beab-6a5a8f537868",
+              "name": "status",
+              "value": "Scheduled",
+              "type": "string"
+            },
+            {
+              "id": "162384ee-be42-44cc-b5a4-a247c736dee9",
+              "name": "customer_confirmation",
+              "value": "Pending",
+              "type": "string"
+            },
+            {
+              "id": "b6c2ee39-784b-486d-a442-682ea4bbba14",
+              "name": "customer_name",
+              "value": "={{ $json.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "7bc8f035-70cd-4a80-b10c-184aeaf1917e",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "67a01c91-d9c5-40b5-823c-cbe040fb26c6",
+              "name": "phone",
+              "value": "={{ $json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "f4d3f2cb-b4ea-4a17-b382-634c89468285",
+              "name": "request",
+              "value": "={{ $json.request }}",
+              "type": "string"
+            },
+            {
+              "id": "05fb5fd7-be97-45f7-ab7c-5f4de26e9eec",
+              "name": "timestamp",
+              "value": "={{ $json.timestamp }}",
+              "type": "string"
+            },
+            {
+              "id": "30408be7-10b5-4ce5-8a74-abaa84600744",
+              "name": "address",
+              "value": "={{ $json.output.address }}",
+              "type": "string"
+            },
+            {
+              "id": "c910e069-dbf4-452f-88e7-bd52bb2b7db6",
+              "name": "waste_type",
+              "value": "={{ $json.output.waste_type }}",
+              "type": "string"
+            },
+            {
+              "id": "e133b75f-ff67-44ba-a09e-ad1fa673c8e0",
+              "name": "quantity",
+              "value": "={{ $json.output.quantity }}",
+              "type": "number"
+            },
+            {
+              "id": "7e2ca490-f582-42bc-b42f-951ecd98ceba",
+              "name": "pickup_date",
+              "value": "={{ $json.output.pickup_date }}",
+              "type": "string"
+            },
+            {
+              "id": "4bbc1173-1df2-4a44-a192-52ca77bcbe2b",
+              "name": "preferred_time",
+              "value": "={{ $json.output.preferred_time }}",
+              "type": "string"
+            },
+            {
+              "id": "b6694430-fa80-4bbc-a91d-d848288efbf2",
+              "name": "service_area",
+              "value": "={{ $json.output.service_area }}",
+              "type": "string"
+            },
+            {
+              "id": "098ccc15-a959-4353-ad4d-c23d4b109cb6",
+              "name": "row_number",
+              "value": "={{ $json.row_number }}",
+              "type": "number"
+            },
+            {
+              "id": "4e16f292-2035-4a06-96ac-b31123d7e500",
+              "name": "driver_id",
+              "value": "={{ $json.driver_id }}",
+              "type": "string"
+            },
+            {
+              "id": "5c94765e-05ad-462b-8bd6-bb40da406dd3",
+              "name": "driver_name",
+              "value": "={{ $json.driver_name }}",
+              "type": "string"
+            },
+            {
+              "id": "11a017c6-bad9-4366-9708-2842807867f9",
+              "name": "driver_phone",
+              "value": "={{ $json.driver_phone }}",
+              "type": "string"
+            },
+            {
+              "id": "f7c59ce4-bf6e-487b-a810-4ac00f8b04ab",
+              "name": "vehicle",
+              "value": "={{ $json.vehicle }}",
+              "type": "string"
+            },
+            {
+              "id": "01546778-f042-43ee-ba3c-41a5d60b2c47",
+              "name": "confirmation_date",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        544,
+        336
+      ],
+      "id": "42ce0f00-7599-4b49-9bbe-c9cbe8525ab3",
+      "name": "Create Job Details"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1sF-e43C18Tj6WDafawutm1FBNQWJn4u6CcICKyfWjBw",
+          "mode": "list",
+          "cachedResultName": "Waste Collection Operations",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sF-e43C18Tj6WDafawutm1FBNQWJn4u6CcICKyfWjBw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Waste Collection Jobs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sF-e43C18Tj6WDafawutm1FBNQWJn4u6CcICKyfWjBw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Job ID": "={{ $json.job_id }}",
+            "Customer Name": "={{ $json.customer_name }}",
+            "Customer Address": "={{ $json.address }}",
+            "Customer Email": "={{ $json.email }}",
+            "Waste Type": "={{ $json.waste_type }}",
+            "Quantity": "={{ $json.quantity }}",
+            "Pickup Date": "={{ $json.pickup_date }}",
+            "Driver": "={{ $json.driver_name }}",
+            "Status": "={{ $json.status }}",
+            "Customer Confirmation": "={{ $json.customer_confirmation }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Job ID",
+              "displayName": "Job ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer Address",
+              "displayName": "Customer Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer Email",
+              "displayName": "Customer Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Waste Type",
+              "displayName": "Waste Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quantity",
+              "displayName": "Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pickup Date",
+              "displayName": "Pickup Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Preferred Time",
+              "displayName": "Preferred Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Driver",
+              "displayName": "Driver",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer Confirmation",
+              "displayName": "Customer Confirmation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        752,
+        416
+      ],
+      "id": "8e7dfc7b-2e2f-4e5b-aebf-3f2528c46c70",
+      "name": "Save Job",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BBRztb0uly5NN9af",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6257440017",
+        "text": "=🚛 NEW WASTE COLLECTION JOB\n\nJob ID: {{ $json.job_id }}\n\nCustomer: {{ $json.customer_name }}\nPhone: {{ $json.phone }}\n\n📍 Pickup Address:\n{{ $json.address }}\n\n♻️ Waste Type: {{ $json.waste_type }}\n\nQuantity: {{ $json.quantity }}\n\n📅 Pickup Date: {{ $json.pickup_date }}\n\n⏰ Preferred Time: \n{{ $json.preferred_time }}\n\n👤 Assigned Driver: {{ $json.driver_name }}\n🚚 Vehicle: {{ $json.vehicle }}\n\nPlease confirm receipt of this job.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        736,
+        256
+      ],
+      "id": "09be3f10-1e0a-4039-8e38-0e93ef3eade8",
+      "name": "Driver's notification",
+      "webhookId": "0fdb1bb9-c21c-4d46-92b5-bccf50fb3682",
+      "credentials": {
+        "telegramApi": {
+          "id": "e1W9mvxSdzSdO91l",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "queenikwuji@gmail.com",
+        "subject": "=Waste Collection Scheduled — {{ $json['Job ID'] }}",
+        "emailType": "text",
+        "message": "=Hi ,{{ $json['Customer Name'] }}\n\nYour waste collection request has been successfully scheduled.\n\nJob ID: {{ $json['Job ID'] }}\n\nPickup Date: {{ $json['Pickup Date'] }}\n\nPreferred Time:{{ $json[' Preferred Time'] }} \n\nPickup Address: {{ $json['Customer Address'] }}\n\nWaste Type: {{ $json['Waste Type'] }}\n\nQuantity: {{ $json.Quantity }}\n\nYour assigned driver is: {{ $json.Driver }}\n\nThank you for using our waste collection service.\n\nBest regards,\nWaste Collection Operations Team",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        416
+      ],
+      "id": "2eb51ce6-75bd-4b17-a07b-c0a1e24106b3",
+      "name": "Customer's Confirmation",
+      "webhookId": "5ebbcf6b-4db8-470e-9048-4659a3397607",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aiGcaUOvICS9C2Lz",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1sF-e43C18Tj6WDafawutm1FBNQWJn4u6CcICKyfWjBw",
+          "mode": "list",
+          "cachedResultName": "Waste Collection Operations",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sF-e43C18Tj6WDafawutm1FBNQWJn4u6CcICKyfWjBw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Waste Collection Jobs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sF-e43C18Tj6WDafawutm1FBNQWJn4u6CcICKyfWjBw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Job ID": "={{ $('Save Job').item.json['Job ID'] }}",
+            "Customer Confirmation": "={{ $json.labelIds[1] }}",
+            "Confirmation Date": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [
+            "Job ID"
+          ],
+          "schema": [
+            {
+              "id": "Job ID",
+              "displayName": "Job ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer Address",
+              "displayName": "Customer Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer Email",
+              "displayName": "Customer Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Waste Type",
+              "displayName": "Waste Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quantity",
+              "displayName": "Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pickup Date",
+              "displayName": "Pickup Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Preferred Time",
+              "displayName": "Preferred Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Driver",
+              "displayName": "Driver",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer Confirmation",
+              "displayName": "Customer Confirmation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Confirmation Date",
+              "displayName": "Confirmation Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1040,
+        416
+      ],
+      "id": "89d05463-3c90-4bbb-bec5-0869e4a2d969",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BBRztb0uly5NN9af",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "connection": "keep-alive",
+            "host": "queen.steprotech.com",
+            "x-forwarded-scheme": "https",
+            "x-forwarded-proto": "https",
+            "x-forwarded-for": "105.112.231.110,172.16.199.76, 32.197.83.155",
+            "x-real-ip": "32.197.83.155",
+            "content-length": "260",
+            "content-type": "application/json",
+            "user-agent": "PostmanRuntime/7.56.0",
+            "accept": "*/*",
+            "cache-control": "no-cache",
+            "postman-token": "91b0c9e8-42f0-49bc-837b-1c34c64a8b66",
+            "accept-encoding": "gzip, deflate, br"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "customer_name": "John Doe",
+            "email": "john@example.com",
+            "phone": "08012345678",
+            "request": "I need 3 bags of general waste collected from my office tomorrow morning. The address is 14 Garki Road, Abuja. Please confirm if you can pick it up."
+          },
+          "webhookUrl": "https://queen.steprotech.com/webhook-test/waste-collection-request",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Drivers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drivers": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Create Job Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Job Details": {
+      "main": [
+        [
+          {
+            "node": "Driver's notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Driver's notification": {
+      "main": [
+        []
+      ]
+    },
+    "Save Job": {
+      "main": [
+        [
+          {
+            "node": "Customer's Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer's Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e7378986-d4c2-4cd7-a205-e6ce2c5a3bc0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b4c383bd9c8e3e5b646ea18b9fb1d2d3df0156d6c1b19b4ebff8e945e07d2a00"
+  },
+  "id": "BIXWjrKGTVUAQi7J",
+  "tags": []
+}
