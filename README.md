@@ -15,6 +15,9 @@ So I built a workflow that connects these steps into one automated process using
 
 This is that build.
 
+<img width="561" height="301" alt="image" src="https://github.com/user-attachments/assets/13b61d6f-d212-4333-b892-c3e4afe3a2ab" />
+
+
 ## The Problem
 
 A typical waste collection request can arrive as an unstructured message such as:
